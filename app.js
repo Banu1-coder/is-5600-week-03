@@ -5,12 +5,20 @@ const port = process.env.PORT || 3000;
 const app = express();
 
 // Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname + '/public'));
 
-// Serve chat.html for the chat app UI
-app.get('/chat', (req, res) => {
-  res.sendFile(path.join(__dirname, 'chat.html'));
-});
+/**
+ * Serves up the chat.html file
+ * @param {http.IncomingMessage} req
+ * @param {http.ServerResponse} res
+ */
+
+function chatApp(req, res) {
+  res.sendFile(path.join(__dirname, '/chat.html'));
+}
+
+// Route for serving chat.html
+app.get('/', chatApp);
 
 // Array to keep track of connected clients for SSE
 const clients = [];
