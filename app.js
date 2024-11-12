@@ -26,6 +26,25 @@ function respondJson(req, res) {
 }
 
 /**
+ * Responds with the input string in various formats
+ *
+ * @param {http.IncomingMessage} req
+ * @param {http.ServerResponse} res
+ */
+function respondEcho(req, res) {
+  const urlObj = new URL(req.url, `http://${req.headers.host}`);
+  const input = urlObj.searchParams.get('input') || '';
+
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({
+    normal: input,
+    shouty: input.toUpperCase(),
+    charCount: input.length,
+    backwards: input.split('').reverse().join(''),
+  }));
+}
+
+/**
  * Responds with a 404 not found
  *
  * @param {http.IncomingMessage} req
@@ -45,7 +64,8 @@ const server = http.createServer(function (request, response) {
   
   if (pathname === '/') return respondText(request, response);
   if (pathname === '/json') return respondJson(request, response);
-
+  if (pathname.match(/^\/echo/)) return respondEcho(request, response);
+  
   respondNotFound(request, response);
 });
 
