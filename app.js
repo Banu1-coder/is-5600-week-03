@@ -3,56 +3,69 @@ const path = require('path');
 const EventEmitter = require('events');
 
 const port = process.env.PORT || 3000;
-const app = express();
 const chatEmitter = new EventEmitter();
 
-// Serve static files from the public directory
-app.use(express.static(__dirname + '/public'));
+function respondText(req, res) {
 
-/**
- * Serves up the chat.html file
- * @param {http.IncomingMessage} req
- * @param {http.ServerResponse} res
- */
+  res.end('hi');
+}
+
+function respondJson(req, res) {
+  res.json({ 
+    text: 'hi',
+     numbers: [
+      1, 2, 3
+    ] 
+  })
+}
+
+function respondNotFound(req, res) {
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  res.end('Not Found');
+}
+
+function respondEcho(req, res) {
+  const { input = ''} = req.query;
+
+
+    res.json({
+        normal: input,
+        shouty: input.toUpperCase(),
+        charCount: input.length,
+        backwards: input.split('').reverse().join(''),
+    }));
+}
+
 function chatApp(req, res) {
   res.sendFile(path.join(__dirname, '/chat.html'));
 }
 
-// Route for serving chat.html
-app.get('/', chatApp);
-
-// /chat endpoint to receive messages and emit to chatEmitter
-app.get('/chat', respondChat);
-
-function respondChat(req, res) {
+function respondChat (req, res) {
   const { message } = req.query;
 
-  console.log("Received message:", message);
-
-  // Emit a 'message' event
   chatEmitter.emit('message', message);
-
   res.end();
 }
 
-// /sse endpoint to establish SSE connection with clients
-app.get('/sse', respondSSE);
-
-function respondSSE(req, res) {
+function respondSSE (req, res) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Connection': 'keep-alive',
   });
 
-  const onMessage = (message) => res.write(`data: ${message}\n\n`);
-  chatEmitter.on('message', onMessage);
+  const onMessage = message => res.write(`data: ${message}\n\n`);
 
+  chatEmitter.on('message', onMessage); 
   res.on('close', () => {
     chatEmitter.off('message', onMessage);
   });
 }
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Listening on port ${port}`);
-});
+const app = express();
+app.use(express.static(__dirname + '/public'));
+app.get('/,chatApp');
+app.get('/sse', respondSSE);
+
+app.listen(port, function()  {
+  console.log(`Server is listening on port ${port}`);
+})
